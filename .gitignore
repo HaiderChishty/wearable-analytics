@@ -1,25 +1,40 @@
+# ----------------------
 # Python
+# ----------------------
 __pycache__/
 *.pyc
 
+# ----------------------
 # Environments
+# ----------------------
 venv/
 .env/
-*.env
 
-# Conda
+# Conda (sometimes creates local files)
 *.conda
 
-# Data
+# ----------------------
+# Data (IMPORTANT)
+# ----------------------
 data/raw/*
 data/processed/*
 
-# VS Code
-.vscode/
+# Keep folder structure but not files
+!data/raw/.gitkeep
+!data/processed/.gitkeep
 
+# ----------------------
 # Jupyter
+# ----------------------
 .ipynb_checkpoints/
 
-# OS
+# ----------------------
+# VS Code
+# ----------------------
+.vscode/
+
+# ----------------------
+# OS junk
+# ----------------------
 .DS_Store
 Thumbs.db
