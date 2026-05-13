@@ -1,3 +1,5 @@
+#data_generation.py
+
 import numpy as np
 import pandas as pd
 import os
@@ -19,21 +21,83 @@ def generate_wearable_data(days=3, freq_min=1, seed=42):
     circadian += 3 * np.sin(2 * np.pi * (t - phase_shift) / (12 * 60))
     circadian += np.random.randn(minutes) * 0.5
 
+   # -------------------------
+    # Sleep state simulation
     # -------------------------
-    # Activity signal (bursty)
-    # -------------------------
-    activity = np.random.rand(minutes)
 
+    sleep_state = np.zeros(minutes)
+
+    for d in range(-1, days):
+
+        day_start = d * 1440
+
+        # Sleep from 11 PM -> 7 AM
+        # States:
+        # 0 = Awake
+        # 1 = Light
+        # 2 = Deep
+        # 3 = REM
+
+        # 11:00 PM - 12:00 AM
+        sleep_state[day_start + 23*60 : day_start + 24*60] = 1
+
+        # 12:00 AM - 1:30 AM
+        sleep_state[day_start + 24*60 : day_start + 24*60 + 90] = 2
+
+        # 1:30 AM - 3:00 AM
+        sleep_state[day_start + 24*60 + 90 : day_start + 24*60 + 180] = 1
+
+        # 3:00 AM - 4:00 AM
+        sleep_state[day_start + 24*60 + 180 : day_start + 24*60 + 240] = 3
+
+        # 4:00 AM - 5:30 AM
+        sleep_state[day_start + 24*60 + 240 : day_start + 24*60 + 330] = 1
+
+        # 5:30 AM - 6:30 AM
+        sleep_state[day_start + 24*60 + 330 : day_start + 24*60 + 390] = 3
+
+        # 6:30 AM - 7:00 AM
+        sleep_state[day_start + 24*60 + 390 : day_start + 24*60 + 420] = 1
+
+    # -------------------------
+    # Activity signal (IMPROVED)
+    # -------------------------
+
+    # baseline circadian movement profile
+    activity_baseline = (
+        0.15
+        + 0.15 * np.sin(2 * np.pi * (t - 8 * 60) / (24 * 60))
+    )
+
+    # small random movement noise
+    activity_noise = np.random.randn(minutes) * 0.05
+
+    activity = activity_baseline + activity_noise
+
+    # suppress activity during sleep
+    activity[sleep_state > 0] *= 0.15
+
+    # slightly more movement during REM
+    activity[sleep_state == 3] += 0.03
+
+    # ensure no negative movement
+    activity = np.clip(activity, 0, None)
+
+    # structured exercise events
     exercise_events = []
 
     for d in range(days):
+
         start = d * 24 * 60 + np.random.randint(8 * 60, 20 * 60)
-        duration = np.random.randint(20, 60)
+        duration = np.random.randint(30, 75)
 
-        activity[start:start + duration] += 2.5
+        # smooth exercise bump instead of rectangle
+        x = np.linspace(0, np.pi, duration)
+        exercise_curve = 4.0 * np.sin(x)
+
+        activity[start:start + duration] += exercise_curve
+
         exercise_events.append((start, start + duration))
-
-    activity = np.clip(activity, 0, None)
 
     # =========================================================
     # HEART RATE (UPDATED: physiologically realistic dynamics)
@@ -68,23 +132,6 @@ def generate_wearable_data(days=3, freq_min=1, seed=42):
             recovery_effect[i] += 15 * decay
 
     hr += recovery_effect
-
-    # 4. sleep modulation (physiological lowering)
-    sleep_state = np.zeros(minutes)
-
-    for d in range(days):
-        sleep_start = d * 24 * 60 + 23 * 60
-        sleep_end = d * 24 * 60 + 7 * 60
-
-        if sleep_end < sleep_start:
-            sleep_state[sleep_start:] = 1
-            sleep_state[:sleep_end] = 1
-
-            deep_start = d * 24 * 60 + 1 * 60
-            sleep_state[deep_start:deep_start + 180] = 2
-
-            rem_start = d * 24 * 60 + 4 * 60
-            sleep_state[rem_start:rem_start + 90] = 3
 
     hr -= 6 * (sleep_state > 0)
     hr -= 2 * (sleep_state == 2)
