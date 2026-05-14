@@ -42,36 +42,56 @@ from src.scoring import generate_scores
 # ======================================================
 
 st.set_page_config(
-    page_title="Wearable Analytics Dashboard",
+    page_title="Welcome back, Haider",
     layout="wide"
 )
 
-st.title("📊 Wearable Analytics Dashboard")
+st.title("Welcome back, Haider")
 
-st.markdown(
-    """
-    Simulated wearable analytics pipeline inspired by WHOOP and Oura.
+# st.markdown(
+#     """
+#     Simulated wearable analytics pipeline inspired by WHOOP and Oura.
 
-    This dashboard demonstrates:
-    - physiological signal generation
-    - preprocessing
-    - feature engineering
-    - wearable-style scoring
-    """
-)
+#     This dashboard demonstrates:
+#     - physiological signal generation
+#     - preprocessing
+#     - feature engineering
+#     - wearable-style scoring
+#     """
+# )
 
 # ======================================================
-# Sidebar Controls
+# Helper Functions 
 # ======================================================
 
-st.sidebar.header("Dashboard Settings")
+def draw_gauge(ax, value, label, color):
+    """
+    value: 0–100
+    """
 
-num_days = st.sidebar.slider(
-    "Number of Days",
-    min_value=3,
-    max_value=14,
-    value=7
-)
+    ax.pie(
+        [value, 100 - value],
+        startangle=90,
+        colors=[color, "#E6E6E6"],
+        wedgeprops={"width": 0.25, "edgecolor": "white"},
+    )
+
+    ax.text(
+        0, 0,
+        f"{value:.0f}",
+        ha="center",
+        va="center",
+        fontsize=22,
+        fontweight="bold"
+    )
+
+    ax.set_title(label, pad=10)
+
+# ======================================================
+# Dashboard Settings
+# ======================================================
+
+num_days = 5
 
 # ======================================================
 # Generate Pipeline Data
@@ -94,47 +114,75 @@ def run_pipeline(days):
 processed_df, scores_df = run_pipeline(num_days)
 
 # ======================================================
-# Daily Scores Overview
+# Day Navigation
 # ======================================================
 
-st.header("🏆 Daily Scores")
+if "selected_day_idx" not in st.session_state:
+    st.session_state.selected_day_idx = len(scores_df) - 1
 
-latest_scores = scores_df.iloc[-1]
+nav_col1, nav_col2, nav_col3, spacer = st.columns([0.5, 1, 0.5, 8])
+
+with nav_col1:
+
+    if st.button("<"):
+
+        st.session_state.selected_day_idx = max(
+            0,
+            st.session_state.selected_day_idx - 1
+        )
+
+selected_scores = scores_df.iloc[
+    st.session_state.selected_day_idx
+]
+
+with nav_col2:
+
+    st.markdown(
+        f"""
+        <div>
+            <h3 style='margin: 0; margin-top: -10px;'>
+                {selected_scores['date']}
+            </h3>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with nav_col3:
+
+    if st.button(">"):
+
+        st.session_state.selected_day_idx = min(
+            len(scores_df) - 1,
+            st.session_state.selected_day_idx + 1
+        )
+
+selected_scores = scores_df.iloc[
+    st.session_state.selected_day_idx
+]
 
 col1, col2, col3 = st.columns(3)
 
-# ------------------------------------------------------
-# Recovery
-# ------------------------------------------------------
+st.header("Daily Recovery Overview")
+
+col1, col2, col3 = st.columns(3)
+
+fig1, ax1 = plt.subplots(figsize=(1, 1))
+fig2, ax2 = plt.subplots(figsize=(1, 1))
+fig3, ax3 = plt.subplots(figsize=(1, 1))
+
+draw_gauge(ax1, selected_scores["recovery_score"], "Recovery", "#4CAF50")
+draw_gauge(ax2, selected_scores["strain_score"], "Strain", "#FF5722")
+draw_gauge(ax3, selected_scores["sleep_score"], "Sleep", "#3F51B5")
 
 with col1:
-
-    st.metric(
-        label="Recovery Score",
-        value=f"{latest_scores['recovery_score']:.1f}"
-    )
-
-# ------------------------------------------------------
-# Strain
-# ------------------------------------------------------
+    st.pyplot(fig1, use_container_width=True)
 
 with col2:
-
-    st.metric(
-        label="Strain Score",
-        value=f"{latest_scores['strain_score']:.1f}"
-    )
-
-# ------------------------------------------------------
-# Sleep
-# ------------------------------------------------------
+    st.pyplot(fig2, use_container_width=True)
 
 with col3:
-
-    st.metric(
-        label="Sleep Score",
-        value=f"{latest_scores['sleep_score']:.1f}"
-    )
+    st.pyplot(fig3, use_container_width=True)
 
 # ======================================================
 # Recommendations
@@ -142,9 +190,9 @@ with col3:
 
 st.header("🧠 Recommendations")
 
-recovery = latest_scores["recovery_score"]
-strain = latest_scores["strain_score"]
-sleep = latest_scores["sleep_score"]
+recovery = selected_scores["recovery_score"]
+strain = selected_scores["strain_score"]
+sleep = selected_scores["sleep_score"]
 
 recommendations = []
 
