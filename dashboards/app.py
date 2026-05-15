@@ -46,19 +46,39 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("Welcome back, Haider")
+st.markdown(
+    """
+    <style>
 
-# st.markdown(
-#     """
-#     Simulated wearable analytics pipeline inspired by WHOOP and Oura.
+    /* Make chart containers invisible / black */
+    div[data-testid="stPlotlyChart"],
+    div[data-testid="stImage"],
+    div[data-testid="stPyplot"] {
+        background-color: black;
+        border: none;
+        box-shadow: none;
+    }
 
-#     This dashboard demonstrates:
-#     - physiological signal generation
-#     - preprocessing
-#     - feature engineering
-#     - wearable-style scoring
-#     """
-# )
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    """
+    <h2 style='
+        margin-top: -60px;
+        margin-bottom: 10px;
+        font-size: 28px;
+        font-weight: 600;
+    '>
+        Welcome back, Haider
+    </h2>
+    """,
+    unsafe_allow_html=True
+)
+
+
 
 # ======================================================
 # Helper Functions 
@@ -69,23 +89,46 @@ def draw_gauge(ax, value, label, color):
     value: 0–100
     """
 
+    # Smaller donut
     ax.pie(
         [value, 100 - value],
         startangle=90,
-        colors=[color, "#E6E6E6"],
-        wedgeprops={"width": 0.25, "edgecolor": "white"},
+        radius=0.25,  # smaller circle
+        colors=[color, "#2A2A2A"],
+        wedgeprops={
+            "width": 0.18,
+            "edgecolor": "none"
+        },
     )
 
+    # Smaller center number
     ax.text(
-        0, 0,
+        0,
+        0,
         f"{value:.0f}",
         ha="center",
         va="center",
-        fontsize=22,
-        fontweight="bold"
+        fontsize=12,      # reduced
+        fontweight="bold",
+        color="white"
     )
 
-    ax.set_title(label, pad=10)
+    # Smaller label
+    ax.set_title(
+        label,
+        pad=2,
+        fontsize=11,
+        color="white"
+    )
+
+    # Move chart upward
+    ax.set_position([0.15, 0.25, 0.7, 0.7])
+
+    # Remove background
+    ax.set_facecolor("black")
+
+    # Remove whitespace
+    ax.axis("equal")
 
 # ======================================================
 # Dashboard Settings
@@ -120,7 +163,7 @@ processed_df, scores_df = run_pipeline(num_days)
 if "selected_day_idx" not in st.session_state:
     st.session_state.selected_day_idx = len(scores_df) - 1
 
-nav_col1, nav_col2, nav_col3, spacer = st.columns([0.5, 1, 0.5, 8])
+nav_col1, nav_col2, nav_col3, spacer = st.columns([0.5, 0.9, 0.5, 8])
 
 with nav_col1:
 
@@ -140,7 +183,11 @@ with nav_col2:
     st.markdown(
         f"""
         <div>
-            <h3 style='margin: 0; margin-top: -10px;'>
+            <h3 style='
+                margin: 0;
+                margin-top: -5px;
+                font-size: 25px;
+            '>
                 {selected_scores['date']}
             </h3>
         </div>
@@ -163,13 +210,29 @@ selected_scores = scores_df.iloc[
 
 col1, col2, col3 = st.columns(3)
 
-st.header("Daily Recovery Overview")
+st.markdown(
+    """
+    <h3 style='
+        font-size: 28px;
+        margin-bottom: 0px;
+        margin-top: 0px;
+    '>
+        Daily Recovery Overview
+    </h3>
+    """,
+    unsafe_allow_html=True
+)
 
 col1, col2, col3 = st.columns(3)
 
-fig1, ax1 = plt.subplots(figsize=(1, 1))
-fig2, ax2 = plt.subplots(figsize=(1, 1))
-fig3, ax3 = plt.subplots(figsize=(1, 1))
+fig1, ax1 = plt.subplots(figsize=(2, 2), facecolor="black")
+plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+fig2, ax2 = plt.subplots(figsize=(2, 2), facecolor="black")
+plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+fig3, ax3 = plt.subplots(figsize=(2, 2), facecolor="black")
+plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
 draw_gauge(ax1, selected_scores["recovery_score"], "Recovery", "#4CAF50")
 draw_gauge(ax2, selected_scores["strain_score"], "Strain", "#FF5722")
