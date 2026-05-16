@@ -141,6 +141,31 @@ def apply_dark(ax, fig):
         spine.set_edgecolor(CARD_BORDER)
     ax.grid(color=GRID_COLOR, linewidth=0.6, alpha=0.9)
     ax.set_axisbelow(True)
+    
+# ======================================================
+# Shared time-axis formatter
+# ======================================================
+
+import matplotlib.dates as mdates
+
+def format_time_axis(ax, interval=2):
+    ax.xaxis.set_major_locator(mdates.HourLocator(interval=interval))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%I:%M %p"))
+
+    ax.tick_params(axis="x", rotation=0)
+
+    labels = []
+    for dt in ax.get_xticks():
+        try:
+            label = mdates.num2date(dt).strftime("%I:%M %p").lstrip("0")
+        except:
+            label = ""
+        labels.append(label)
+
+    ax.set_xticklabels(labels)
+
+    for label in ax.get_xticklabels():
+        label.set_horizontalalignment("center")
 
 
 # ======================================================
@@ -163,10 +188,10 @@ def card_title(text):
 def stat_row(label, value):
     return (
         '<div style="display:flex; justify-content:space-between; '
-        'align-items:center; padding:6px 0; border-bottom:1px solid #1f2233;">'
-        f'<span style="font-size:13px; color:#6b7280;">{label}</span>'
-        f'<span style="font-family:DM Mono,monospace; font-size:13px; '
-        f'color:#e8eaf0;">{value}</span>'
+        'align-items:center; padding:7px 0; border-bottom:1px solid #1f2233;">'
+        f'<span style="font-size:15px; color:#9ca3af;">{label}</span>'
+        f'<span style="font-family:DM Mono,monospace; font-size:15px; '
+        f'font-weight:500; color:#f3f4f6;">{value}</span>'
         '</div>'
     )
 
@@ -249,24 +274,85 @@ today = day_scores.iloc[0]
 # SCORE RINGS
 # ======================================================
 
-ring_cols = st.columns([1, 1, 1, 4])
+spacer1, ring_col1, ring_col2, ring_col3, spacer2 = st.columns(
+    [2, 1, 1, 1, 2]
+)
+
 ring_data = [
-    (today["recovery_score"], "Recovery", "#34d399"),
-    (today["strain_score"],   "Strain",   "#fb923c"),
-    (today["sleep_score"],    "Sleep",    "#818cf8"),
+    (today["recovery_score"], "Recovery", "#34d399", ring_col1),
+    (today["strain_score"],   "Strain",   "#fb923c", ring_col2),
+    (today["sleep_score"],    "Sleep",    "#818cf8", ring_col3),
 ]
 
-for col, (score, label, color) in zip(ring_cols[:3], ring_data):
+for score, label, color, col in ring_data:
     with col:
         st.markdown(
-            f'<div style="display:flex; justify-content:center;">'
-            f'{score_ring_img(score, label, color)}</div>',
+            f"""
+            <div style="
+                display:flex;
+                justify-content:center;
+                align-items:center;
+            ">
+                {score_ring_img(score, label, color)}
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
-st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+# ======================================================
+# READINESS INSIGHTS
+# ======================================================
+
+recovery = today["recovery_score"]
+strain   = today["strain_score"]
+sleep    = today["sleep_score"]
+
+pills = []
+
+if recovery >= 70:
+    pills.append(("green",  "High recovery — ready for intensity."))
+elif recovery >= 45:
+    pills.append(("yellow", "Moderate recovery — train smart."))
+else:
+    pills.append(("red",    "Low recovery — prioritize rest."))
+
+if sleep >= 80:
+    pills.append(("green", "Excellent sleep quality."))
+elif sleep < 55:
+    pills.append(("blue",  "Poor sleep — aim for 8 hrs tonight."))
+
+if strain > 75:
+    pills.append(("yellow", "High strain — monitor fatigue."))
+elif strain < 30:
+    pills.append(("blue",   "Low strain — room for more activity."))
+
+prior = scores_df[scores_df["date"] < selected_date]
+
+if len(prior) >= 2:
+    delta = today["nightly_hrv"] - prior["nightly_hrv"].mean()
+
+    if delta > 3:
+        pills.append(("green", f"HRV up +{delta:.1f} ms vs average."))
+    elif delta < -3:
+        pills.append(("red",   f"HRV down {delta:.1f} ms vs average."))
+
 st.markdown(
-    '<hr style="border-color:#1f2233; margin:0.5rem 0 1.2rem 0;">',
+    f"""
+    <div style="
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        flex-wrap:wrap;
+        gap:10px;
+        margin-top:-0.5rem;
+        margin-bottom:1.2rem;
+    ">
+        {"".join(
+            rec_pill(text, kind).replace("<br>", "")
+            for kind, text in pills
+        )}
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
@@ -274,24 +360,30 @@ st.markdown(
 # ======================================================
 # ROW 1 — Heart Rate  |  HRV
 # ======================================================
+day_start = pd.Timestamp(selected_date)
+day_end   = day_start + pd.Timedelta(days=1)
+
 
 col1, col2 = st.columns(2)
 
 # ── Heart Rate ───────────────────────────────────────
 
 with col1:
-    st.markdown(CARD_OPEN + card_title("Heart Rate"), unsafe_allow_html=True)
+    st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
-    fig, ax = plt.subplots(figsize=(6, 2.6))
+    fig, ax = plt.subplots(figsize=(6, 2.8))
     apply_dark(ax, fig)
     ax.plot(day_processed["timestamp"], day_processed["hr"],
             color="#374151", linewidth=0.8, alpha=0.5, label="Raw")
     ax.plot(day_processed["timestamp"], day_processed["hr_smooth"],
             color="#f87171", linewidth=2, label="Smoothed")
-    ax.set_ylabel("bpm", fontsize=9, color=TEXT_MID)
-    # ax.legend(fontsize=8, facecolor=DARK_BG, edgecolor=CARD_BORDER,
-    #           labelcolor=TEXT_MID)
-    plt.xticks(rotation=20, ha="right", fontsize=8)
+    ax.set_title("Heart Rate", fontsize=13, color="#e8eaf0",
+                 fontweight="500", loc="left", pad=8)
+    ax.set_ylabel("bpm", fontsize=10, color=TEXT_MID)
+    
+    ax.set_xlim(day_start, day_end)
+    
+    format_time_axis(ax, interval=4)
     plt.tight_layout(pad=0.4)
     st.pyplot(fig, use_container_width=True)
     plt.close()
@@ -311,18 +403,21 @@ with col1:
 # ── HRV ─────────────────────────────────────────────
 
 with col2:
-    st.markdown(CARD_OPEN + card_title("Heart Rate Variability"), unsafe_allow_html=True)
+    st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
-    fig, ax = plt.subplots(figsize=(6, 2.6))
+    fig, ax = plt.subplots(figsize=(6, 2.8))
     apply_dark(ax, fig)
     ax.plot(day_processed["timestamp"], day_processed["hrv"],
             color="#374151", linewidth=0.8, alpha=0.5, label="Raw")
     ax.plot(day_processed["timestamp"], day_processed["hrv_smooth"],
             color="#818cf8", linewidth=2, label="Smoothed")
-    ax.set_ylabel("ms", fontsize=9, color=TEXT_MID)
-    # ax.legend(fontsize=8, facecolor=DARK_BG, edgecolor=CARD_BORDER,
-    #           labelcolor=TEXT_MID)
-    plt.xticks(rotation=20, ha="right", fontsize=8)
+    ax.set_title("Heart Rate Variability", fontsize=13, color="#e8eaf0",
+                 fontweight="500", loc="left", pad=8)
+    ax.set_ylabel("ms", fontsize=10, color=TEXT_MID)
+    
+    ax.set_xlim(day_start, day_end)
+    
+    format_time_axis(ax, interval=4)
     plt.tight_layout(pad=0.4)
     st.pyplot(fig, use_container_width=True)
     plt.close()
@@ -351,12 +446,22 @@ col3, col4 = st.columns(2)
 # ── Sleep Staging ────────────────────────────────────
 
 with col3:
-    st.markdown(CARD_OPEN + card_title("Sleep Staging"), unsafe_allow_html=True)
+    st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
-    sleep_window = day_processed[day_processed["sleep_state"] > 0]
+    # Last night = evening before selected_date (20:00) → morning of selected_date (10:00)
+    # This captures the full 11pm–7am sleep window regardless of which calendar day it's on
+    import datetime
+    night_start = pd.Timestamp(selected_date) - pd.Timedelta(hours=4)   # 20:00 prev day
+    night_end   = pd.Timestamp(selected_date) + pd.Timedelta(hours=10)  # 10:00 selected day
+
+    sleep_window = processed_df[
+        (processed_df["timestamp"] >= night_start) &
+        (processed_df["timestamp"] <= night_end) &
+        (processed_df["sleep_state"] > 0)
+    ]
 
     if len(sleep_window) > 10:
-        fig, ax = plt.subplots(figsize=(6, 2.6))
+        fig, ax = plt.subplots(figsize=(6, 2.8))
         apply_dark(ax, fig)
 
         for stage, color in [(1, "#3b82f6"), (2, "#1d4ed8"), (3, "#818cf8")]:
@@ -367,23 +472,36 @@ with col3:
                            color=color, alpha=0.85, linewidth=0)
 
         ax.set_yticks([1, 2, 3])
-        ax.set_yticklabels(["Light", "Deep", "REM"], fontsize=9, color=TEXT_MID)
+        ax.set_yticklabels(["Light", "Deep", "REM"], fontsize=10, color=TEXT_MID)
         ax.set_ylim(0.5, 3.5)
+        ax.set_title("Sleep Staging", fontsize=13, color="#e8eaf0",
+                     fontweight="500", loc="left", pad=8)
         patches = [
             mpatches.Patch(color="#3b82f6", label="Light"),
             mpatches.Patch(color="#1d4ed8", label="Deep"),
             mpatches.Patch(color="#818cf8", label="REM"),
         ]
-        ax.legend(handles=patches, fontsize=8, facecolor=DARK_BG,
+        ax.legend(handles=patches, fontsize=9, facecolor=DARK_BG,
                   edgecolor=CARD_BORDER, labelcolor=TEXT_MID)
-        plt.xticks(rotation=20, ha="right", fontsize=8)
+
+        # X-axis: show only the sleep window range, formatted as time
+        ax.set_xlim(sleep_window["timestamp"].min(), sleep_window["timestamp"].max())
+        import matplotlib.dates as mdates
+        # import matplotlib.ticker as mticker
+
+        # def _fmt_time(x, pos):
+        #     dt = mdates.num2date(x)
+        #     return dt.strftime("%I:%M %p").lstrip("0")
+
+        format_time_axis(ax, interval=1)
+        format_time_axis(ax)
         plt.tight_layout(pad=0.4)
         st.pyplot(fig, use_container_width=True)
         plt.close()
     else:
         st.markdown(
-            '<p style="color:#4b5563; font-size:13px; padding:1rem 0;">'
-            'No sleep data for this day.</p>',
+            '<p style="color:#9ca3af; font-size:14px; padding:1rem 0;">'
+            'No sleep data for this night.</p>',
             unsafe_allow_html=True
         )
 
@@ -400,34 +518,53 @@ with col3:
     st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
-# ── HR Zone Distribution ─────────────────────────────
+# ── HR Zone Distribution (pie chart) ─────────────────
 
 with col4:
-    st.markdown(CARD_OPEN + card_title("HR Zone Distribution"), unsafe_allow_html=True)
+    st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
     zone_cols   = ["zone1_minutes", "zone2_minutes", "zone3_minutes",
                    "zone4_minutes", "zone5_minutes"]
-    zone_labels = ["Z1  <90 bpm", "Z2  90–110", "Z3  110–130",
-                   "Z4  130–150", "Z5  >150 bpm"]
+    zone_labels = ["Z1 <90", "Z2 90–110", "Z3 110–130",
+                   "Z4 130–150", "Z5 >150"]
     zone_colors = ["#1e3a5f", "#2563eb", "#d97706", "#ea580c", "#dc2626"]
 
     zone_minutes = [float(today.get(z, 0)) for z in zone_cols]
     total_min    = sum(zone_minutes)
 
-    fig, ax = plt.subplots(figsize=(6, 2.6))
-    apply_dark(ax, fig)
+    # Only include zones with non-zero minutes
+    filtered = [
+        (m, l, c)
+        for m, l, c in zip(zone_minutes, zone_labels, zone_colors)
+        if m > 0
+    ]
 
-    y_pos = list(range(len(zone_labels)))
-    bars  = ax.barh(y_pos, zone_minutes, color=zone_colors, height=0.55)
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(zone_labels, fontsize=9, color=TEXT_MID)
-    ax.set_xlabel("minutes", fontsize=9, color=TEXT_MID)
-    ax.invert_yaxis()
-    for bar, mins in zip(bars, zone_minutes):
-        if mins > 2:
-            ax.text(bar.get_width() + 1,
-                    bar.get_y() + bar.get_height() / 2,
-                    f"{mins:.0f}", va="center", fontsize=8, color=TEXT_MID)
+    fig, ax = plt.subplots(figsize=(5, 2.8))
+    apply_dark(ax, fig)
+    ax.set_facecolor(DARK_BG)
+    fig.patch.set_facecolor(DARK_BG)
+    ax.set_title("HR Zone Distribution", fontsize=13, color="#e8eaf0",
+                 fontweight="500", loc="left", pad=8)
+
+    if filtered:
+        mins_f, labels_f, colors_f = zip(*filtered)
+        wedges, texts, autotexts = ax.pie(
+            mins_f,
+            labels=labels_f,
+            colors=colors_f,
+            autopct=lambda p: f"{p:.0f}%" if p > 5 else "",
+            startangle=90,
+            wedgeprops={"linewidth": 1.5, "edgecolor": DARK_BG},
+            textprops={"color": TEXT_MID, "fontsize": 9},
+        )
+        for at in autotexts:
+            at.set_color("#ffffff")
+            at.set_fontsize(9)
+            at.set_fontweight("500")
+    else:
+        ax.text(0, 0, "No HR data", ha="center", va="center",
+                color=TEXT_MID, fontsize=11)
+
     plt.tight_layout(pad=0.4)
     st.pyplot(fig, use_container_width=True)
     plt.close()
@@ -447,25 +584,27 @@ st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
 
 # ======================================================
-# ROW 3 — Activity Signal  |  Readiness Insights
+# ROW 3 — Activity Signal (full width)
 # ======================================================
 
-col5, col6 = st.columns([3, 2])
+col5, _ = st.columns([3, 2])
 
 # ── Activity ─────────────────────────────────────────
 
 with col5:
-    st.markdown(CARD_OPEN + card_title("Activity Signal"), unsafe_allow_html=True)
+    st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
-    fig, ax = plt.subplots(figsize=(7, 2.6))
+    fig, ax = plt.subplots(figsize=(7, 2.8))
     apply_dark(ax, fig)
     ax.fill_between(day_processed["timestamp"],
                     day_processed["activity_smooth"],
                     color="#fb923c", alpha=0.2, linewidth=0)
     ax.plot(day_processed["timestamp"], day_processed["activity_smooth"],
             color="#fb923c", linewidth=1.8)
-    ax.set_ylabel("a.u.", fontsize=9, color=TEXT_MID)
-    plt.xticks(rotation=20, ha="right", fontsize=8)
+    ax.set_title("Activity Signal", fontsize=13, color="#e8eaf0",
+                 fontweight="500", loc="left", pad=8)
+    ax.set_ylabel("a.u.", fontsize=10, color=TEXT_MID)
+    format_time_axis(ax)
     plt.tight_layout(pad=0.4)
     st.pyplot(fig, use_container_width=True)
     plt.close()
@@ -480,81 +619,50 @@ with col5:
     st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
-# ── Readiness Insights ───────────────────────────────
-
-with col6:
-    st.markdown(CARD_OPEN + card_title("Readiness Insights"), unsafe_allow_html=True)
-
-    recovery = today["recovery_score"]
-    strain   = today["strain_score"]
-    sleep    = today["sleep_score"]
-
-    pills = []
-
-    if recovery >= 70:
-        pills.append(("green",  "High recovery — ready for intensity."))
-    elif recovery >= 45:
-        pills.append(("yellow", "Moderate recovery — train smart."))
-    else:
-        pills.append(("red",    "Low recovery — prioritize rest."))
-
-    if sleep >= 80:
-        pills.append(("green", "Excellent sleep quality."))
-    elif sleep < 55:
-        pills.append(("blue",  "Poor sleep — aim for 8 hrs tonight."))
-
-    if strain > 75:
-        pills.append(("yellow", "High strain — monitor fatigue."))
-    elif strain < 30:
-        pills.append(("blue",   "Low strain — room for more activity."))
-
-    prior = scores_df[scores_df["date"] < selected_date]
-    if len(prior) >= 2:
-        delta = today["nightly_hrv"] - prior["nightly_hrv"].mean()
-        if delta > 3:
-            pills.append(("green", f"HRV up +{delta:.1f} ms vs average."))
-        elif delta < -3:
-            pills.append(("red",   f"HRV down {delta:.1f} ms vs average."))
-
-    st.markdown(
-        "".join(rec_pill(text, kind) for kind, text in pills),
-        unsafe_allow_html=True
-    )
-    st.markdown(CARD_CLOSE, unsafe_allow_html=True)
+# (Readiness Insights moved to score ring row above)
 
 
 st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
 
 # ======================================================
-# ROW 4 — Score History strip (all days, selected highlighted)
+# ROW 4 — Score History: last 5 days, grouped bars
 # ======================================================
 
-st.markdown(CARD_OPEN + card_title("Score History — All Days"), unsafe_allow_html=True)
+st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
-fig, ax = plt.subplots(figsize=(14, 2.4))
+# Filter to last 5 days
+history_df = scores_df.tail(5).copy()
+dates_str  = [str(d) for d in history_df["date"]]
+
+x     = np.arange(len(dates_str))
+width = 0.25
+
+fig, ax = plt.subplots(figsize=(14, 2.8))
 apply_dark(ax, fig)
 
-dates_str = scores_df["date"].astype(str)
+bars_rec    = ax.bar(x - width, history_df["recovery_score"],
+                     width, color="#34d399", label="Recovery", alpha=0.85)
+bars_sleep  = ax.bar(x,         history_df["sleep_score"],
+                     width, color="#818cf8", label="Sleep",    alpha=0.85)
+bars_strain = ax.bar(x + width, history_df["strain_score"],
+                     width, color="#fb923c", label="Strain",   alpha=0.85)
 
-ax.plot(dates_str, scores_df["recovery_score"],
-        marker="o", markersize=5, linewidth=2,
-        color="#34d399", label="Recovery")
-ax.plot(dates_str, scores_df["sleep_score"],
-        marker="s", markersize=5, linewidth=2,
-        color="#818cf8", label="Sleep")
-ax.plot(dates_str, scores_df["strain_score"],
-        marker="^", markersize=5, linewidth=2,
-        color="#fb923c", label="Strain", linestyle="--")
+# Highlight selected day's group
+if str(selected_date) in dates_str:
+    sel_idx = dates_str.index(str(selected_date))
+    for bar_group in [bars_rec, bars_sleep, bars_strain]:
+        bar_group[sel_idx].set_edgecolor("#ffffff")
+        bar_group[sel_idx].set_linewidth(1.5)
 
-ax.axvline(str(selected_date), color="#ffffff",
-           linewidth=1.2, linestyle=":", alpha=0.5)
-
-ax.set_ylim(0, 105)
-ax.set_ylabel("Score", fontsize=9, color=TEXT_MID)
-ax.legend(fontsize=9, facecolor=DARK_BG, edgecolor=CARD_BORDER,
-          labelcolor=TEXT_MID, loc="lower right")
-plt.xticks(rotation=30, ha="right", fontsize=8)
+ax.set_title("Score History — Last 5 Days", fontsize=13, color="#e8eaf0",
+             fontweight="500", loc="left", pad=8)
+ax.set_xticks(x)
+ax.set_xticklabels(dates_str, fontsize=10, color=TEXT_MID)
+ax.set_ylim(0, 115)
+ax.set_ylabel("Score", fontsize=10, color=TEXT_MID)
+ax.legend(fontsize=10, facecolor=DARK_BG, edgecolor=CARD_BORDER,
+          labelcolor=TEXT_MID, loc="upper right")
 plt.tight_layout(pad=0.4)
 st.pyplot(fig, use_container_width=True)
 plt.close()
