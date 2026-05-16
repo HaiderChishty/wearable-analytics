@@ -192,9 +192,9 @@ def rec_pill(text, kind="green"):
 st.markdown(
     '<div style="font-size:28px; font-weight:300; color:#e8eaf0; '
     'letter-spacing:-0.02em; margin-bottom:4px;">'
-    'Welcome back, <span style="font-weight:600; color:#fff;">Athlete</span>'
+    'Welcome back, <span style="font-weight:600; color:#fff;">Haider</span>'
     '</div>'
-    '<div style="font-size:13px; color:#4b5563; margin-bottom:1.5rem;">'
+    '<div style="font-size:15px; color:#CCCCCC; margin-bottom:1.5rem;">'
     'Your physiological snapshot</div>',
     unsafe_allow_html=True
 )
@@ -207,7 +207,7 @@ st.markdown(
 if "day_idx" not in st.session_state:
     st.session_state.day_idx = len(all_dates) - 1   # most recent day
 
-nav1, nav2, nav3, _ = st.columns([1, 2, 1, 4])
+nav1, nav2, nav3, _ = st.columns([1, 2, 1, 12])
 
 with nav1:
     if st.button("◀  Prev", use_container_width=True):
@@ -289,8 +289,8 @@ with col1:
     ax.plot(day_processed["timestamp"], day_processed["hr_smooth"],
             color="#f87171", linewidth=2, label="Smoothed")
     ax.set_ylabel("bpm", fontsize=9, color=TEXT_MID)
-    ax.legend(fontsize=8, facecolor=DARK_BG, edgecolor=CARD_BORDER,
-              labelcolor=TEXT_MID)
+    # ax.legend(fontsize=8, facecolor=DARK_BG, edgecolor=CARD_BORDER,
+    #           labelcolor=TEXT_MID)
     plt.xticks(rotation=20, ha="right", fontsize=8)
     plt.tight_layout(pad=0.4)
     st.pyplot(fig, use_container_width=True)
@@ -320,8 +320,8 @@ with col2:
     ax.plot(day_processed["timestamp"], day_processed["hrv_smooth"],
             color="#818cf8", linewidth=2, label="Smoothed")
     ax.set_ylabel("ms", fontsize=9, color=TEXT_MID)
-    ax.legend(fontsize=8, facecolor=DARK_BG, edgecolor=CARD_BORDER,
-              labelcolor=TEXT_MID)
+    # ax.legend(fontsize=8, facecolor=DARK_BG, edgecolor=CARD_BORDER,
+    #           labelcolor=TEXT_MID)
     plt.xticks(rotation=20, ha="right", fontsize=8)
     plt.tight_layout(pad=0.4)
     st.pyplot(fig, use_container_width=True)
