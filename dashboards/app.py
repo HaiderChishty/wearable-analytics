@@ -369,7 +369,7 @@ col1, col2 = st.columns(2)
 # ── Heart Rate ───────────────────────────────────────
 
 with col1:
-    st.markdown(CARD_OPEN, unsafe_allow_html=True)
+    # st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
     fig, ax = plt.subplots(figsize=(6, 2.8))
     apply_dark(ax, fig)
@@ -397,13 +397,13 @@ with col1:
         stat_row("Daily max", f"{max_hr:.0f} bpm"),
         unsafe_allow_html=True
     )
-    st.markdown(CARD_CLOSE, unsafe_allow_html=True)
+    # st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
 # ── HRV ─────────────────────────────────────────────
 
 with col2:
-    st.markdown(CARD_OPEN, unsafe_allow_html=True)
+    # st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
     fig, ax = plt.subplots(figsize=(6, 2.8))
     apply_dark(ax, fig)
@@ -431,7 +431,7 @@ with col2:
         stat_row("Daily max", f"{max_hrv:.1f} ms"),
         unsafe_allow_html=True
     )
-    st.markdown(CARD_CLOSE, unsafe_allow_html=True)
+    # st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
 st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
@@ -446,7 +446,7 @@ col3, col4 = st.columns(2)
 # ── Sleep Staging ────────────────────────────────────
 
 with col3:
-    st.markdown(CARD_OPEN, unsafe_allow_html=True)
+    # st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
     # Last night = evening before selected_date (20:00) → morning of selected_date (10:00)
     # This captures the full 11pm–7am sleep window regardless of which calendar day it's on
@@ -471,9 +471,16 @@ with col3:
                 ax.axvspan(t, t + pd.Timedelta(minutes=1),
                            color=color, alpha=0.85, linewidth=0)
 
-        ax.set_yticks([1, 2, 3])
-        ax.set_yticklabels(["Light", "Deep", "REM"], fontsize=10, color=TEXT_MID)
-        ax.set_ylim(0.5, 3.5)
+        # ax.set_yticks([1, 2, 3])
+        # ax.set_yticklabels(["Light", "Deep", "REM"], fontsize=10, color=TEXT_MID)
+        # ax.set_ylim(0.5, 3.5)
+        # Hide meaningless y-axis
+        ax.set_yticks([])
+        ax.set_ylim(0, 1)
+
+        # Remove left/right spines for cleaner timeline look
+        ax.spines["left"].set_visible(False)
+        ax.spines["right"].set_visible(False)
         ax.set_title("Sleep Staging", fontsize=13, color="#e8eaf0",
                      fontweight="500", loc="left", pad=8)
         patches = [
@@ -481,21 +488,53 @@ with col3:
             mpatches.Patch(color="#1d4ed8", label="Deep"),
             mpatches.Patch(color="#818cf8", label="REM"),
         ]
-        ax.legend(handles=patches, fontsize=9, facecolor=DARK_BG,
-                  edgecolor=CARD_BORDER, labelcolor=TEXT_MID)
+        ax.legend(
+            handles=patches,
+            ncol=3,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.18),
+            fontsize=9,
+            facecolor=DARK_BG,
+            edgecolor=CARD_BORDER,
+            labelcolor=TEXT_MID,
+            frameon=False
+        )
 
-        # X-axis: show only the sleep window range, formatted as time
-        ax.set_xlim(sleep_window["timestamp"].min(), sleep_window["timestamp"].max())
-        import matplotlib.dates as mdates
-        # import matplotlib.ticker as mticker
+        start = sleep_window["timestamp"].min()
+        end   = sleep_window["timestamp"].max()
 
-        # def _fmt_time(x, pos):
-        #     dt = mdates.num2date(x)
-        #     return dt.strftime("%I:%M %p").lstrip("0")
+        ax.set_xlim(start, end)
 
-        format_time_axis(ax, interval=1)
-        format_time_axis(ax)
-        plt.tight_layout(pad=0.4)
+        # 1) clean hourly grid
+        ticks = pd.date_range(
+            start=start.floor("h"),
+            end=end.ceil("h"),
+            freq="1h"
+        )
+
+        # 2) keep only ticks inside or near range
+        ticks = [t for t in ticks if start <= t <= end]
+
+        # 3) FORCE include right edge if missing
+        # (this guarantees endpoint tick even if it's not exactly on the hour)
+        if len(ticks) == 0 or ticks[-1] != end.floor("h"):
+            ticks.append(end.floor("h"))
+
+        # remove duplicates + sort
+        ticks = sorted(set(ticks))
+
+        ax.set_xticks(ticks)
+
+        ax.set_xticklabels(
+            [t.strftime("%I:%M %p").lstrip("0") for t in ticks],
+            color=TEXT_MID,
+            fontsize=9
+        )
+       
+       
+        ax.tick_params(axis="x", rotation=0)
+
+        plt.tight_layout(pad=0.4, rect=[0, 0.08, 1, 1])
         st.pyplot(fig, use_container_width=True)
         plt.close()
     else:
@@ -515,13 +554,13 @@ with col3:
         stat_row("REM / Deep", f"{rem:.0f}% / {deep:.0f}%"),
         unsafe_allow_html=True
     )
-    st.markdown(CARD_CLOSE, unsafe_allow_html=True)
+    # st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
 # ── HR Zone Distribution (pie chart) ─────────────────
 
 with col4:
-    st.markdown(CARD_OPEN, unsafe_allow_html=True)
+    # st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
     zone_cols   = ["zone1_minutes", "zone2_minutes", "zone3_minutes",
                    "zone4_minutes", "zone5_minutes"]
@@ -577,7 +616,7 @@ with col4:
         stat_row("Total HR zone minutes", f"{total_min:.0f} min"),
         unsafe_allow_html=True
     )
-    st.markdown(CARD_CLOSE, unsafe_allow_html=True)
+    # st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
 st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
@@ -592,7 +631,7 @@ col5, _ = st.columns([3, 2])
 # ── Activity ─────────────────────────────────────────
 
 with col5:
-    st.markdown(CARD_OPEN, unsafe_allow_html=True)
+    # st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
     fig, ax = plt.subplots(figsize=(7, 2.8))
     apply_dark(ax, fig)
@@ -616,7 +655,7 @@ with col5:
         stat_row("Activity load", f"{load:.1f}"),
         unsafe_allow_html=True
     )
-    st.markdown(CARD_CLOSE, unsafe_allow_html=True)
+    # st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
 # (Readiness Insights moved to score ring row above)
@@ -629,7 +668,7 @@ st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 # ROW 4 — Score History: last 5 days, grouped bars
 # ======================================================
 
-st.markdown(CARD_OPEN, unsafe_allow_html=True)
+# st.markdown(CARD_OPEN, unsafe_allow_html=True)
 
 # Filter to last 5 days
 history_df = scores_df.tail(5).copy()
@@ -667,7 +706,7 @@ plt.tight_layout(pad=0.4)
 st.pyplot(fig, use_container_width=True)
 plt.close()
 
-st.markdown(CARD_CLOSE, unsafe_allow_html=True)
+# st.markdown(CARD_CLOSE, unsafe_allow_html=True)
 
 
 # ======================================================
