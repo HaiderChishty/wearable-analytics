@@ -24,18 +24,7 @@ def add_date_column(df):
 # =========================================================
 # Resting Heart Rate
 # =========================================================
-#
-# Approximation:
-# Lowest sustained HR during sleep
-#
-# Real wearables often estimate RHR during:
-# - deep sleep
-# - low-motion periods
-# - overnight windows
-#
-# Here:
-# Use 5th percentile sleeping HR
-# =========================================================
+
 
 def calculate_resting_hr(df):
 
@@ -54,14 +43,7 @@ def calculate_resting_hr(df):
 # =========================================================
 # Nightly HRV
 # =========================================================
-#
-# Average HRV during sleep
-#
-# Higher HRV generally reflects:
-# - better recovery
-# - lower stress
-# - stronger parasympathetic activity
-# =========================================================
+
 
 def calculate_nightly_hrv(df):
 
@@ -80,10 +62,7 @@ def calculate_nightly_hrv(df):
 # =========================================================
 # Sleep Duration
 # =========================================================
-#
-# Total minutes asleep
-# Converted to hours
-# =========================================================
+
 
 def calculate_sleep_duration(df):
 
@@ -102,15 +81,6 @@ def calculate_sleep_duration(df):
 
 # =========================================================
 # Sleep Efficiency
-# =========================================================
-#
-# Simple approximation:
-#
-# sleep time / time in bed
-#
-# Since synthetic data currently assumes fixed
-# sleep opportunity window (11 PM - 7 AM),
-# efficiency estimates fragmentation.
 # =========================================================
 
 def calculate_sleep_efficiency(df):
@@ -133,11 +103,7 @@ def calculate_sleep_efficiency(df):
 # =========================================================
 # Sleep Stage Percentages
 # =========================================================
-#
-# 1 = Light
-# 2 = Deep
-# 3 = REM
-# =========================================================
+
 
 def calculate_sleep_stage_percentages(df):
 
@@ -197,18 +163,7 @@ def calculate_activity_features(df):
 # =========================================================
 # Heart Rate Zone Features
 # =========================================================
-#
-# Simple wearable-style HR zones
-#
-# Zone 1: < 90 bpm
-# Zone 2: 90–110
-# Zone 3: 110–130
-# Zone 4: 130–150
-# Zone 5: > 150
-#
-# Later:
-# Can personalize using HRmax/reserve
-# =========================================================
+
 
 def calculate_hr_zone_features(df):
 

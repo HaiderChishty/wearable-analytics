@@ -240,39 +240,6 @@ def score_rings_component(rec_score, str_score, slp_score, animate=False):
     # height = svg height + a little breathing room
     components.html(html, height=size + 36, scrolling=False)
 
-
-# ======================================================
-# Static score ring (base64 SVG) — used nowhere in the
-# header now but kept for any future standalone use
-# ======================================================
-
-def score_ring_img(score, label, color, size=118):
-    r         = int(size * 0.34)
-    cx = cy   = size // 2
-    circ      = 2 * math.pi * r
-    filled    = max(0.0, min(1.0, score / 100)) * circ
-    gap       = circ - filled
-    score_int = int(round(score))
-    label_y   = size + 16
-    svg = (
-        f'<svg width="{size}" height="{size + 20}" '
-        f'viewBox="0 0 {size} {size + 20}" xmlns="http://www.w3.org/2000/svg">'
-        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#22253a" stroke-width="7"/>'
-        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{color}" stroke-width="7" '
-        f'stroke-linecap="round" stroke-dasharray="{filled:.2f} {gap:.2f}" '
-        f'transform="rotate(-90 {cx} {cy})"/>'
-        f'<text x="{cx}" y="{cy + 6}" text-anchor="middle" '
-        f'font-family="DM Mono,monospace" font-size="16" font-weight="500" fill="#ffffff">'
-        f'{score_int}</text>'
-        f'<text x="{cx}" y="{label_y}" text-anchor="middle" '
-        f'font-family="DM Sans,sans-serif" font-size="9" letter-spacing="1.5" fill="#6b7280">'
-        f'{label.upper()}</text>'
-        f'</svg>'
-    )
-    b64 = base64.b64encode(svg.encode()).decode()
-    return f'<img src="data:image/svg+xml;base64,{b64}" width="{size}" />'
-
-
 # ======================================================
 # Matplotlib dark style
 # ======================================================
@@ -406,9 +373,6 @@ if len(prior) >= 2:
 
 # ======================================================
 # HEADER ROW
-# Left   → Welcome + day picker
-# Center → Animated score rings (JS component)
-# Right  → Readiness pills
 # ======================================================
 
 hdr_l, hdr_c, hdr_r = st.columns([2.6, 3.2, 2.2])
@@ -739,15 +703,3 @@ with col6:
     plt.close()
 
 
-# ======================================================
-# Footer
-# ======================================================
-
-st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
-st.markdown(
-    '<div style="text-align:center; font-size:11px; color:#374151; '
-    'letter-spacing:0.05em;">'
-    'WEARABLE ANALYTICS &nbsp;·&nbsp; SIMULATED PHYSIOLOGICAL DATA'
-    '&nbsp;·&nbsp; INSPIRED BY WHOOP / OURA</div>',
-    unsafe_allow_html=True
-)

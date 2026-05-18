@@ -12,17 +12,7 @@ from src.features import generate_features
 # =========================================================
 # Helper: Normalize values to wearable-style scores
 # =========================================================
-#
-# Converts physiological metrics into 0–100 scores.
-#
-# Higher-is-better:
-#   normalized = higher score for larger values
-#
-# Lower-is-better:
-#   normalized = higher score for smaller values
-#
-# Keeps scoring interpretable and easy to tune later.
-# =========================================================
+
 
 def normalize_score(value, min_val, max_val, reverse=False):
 

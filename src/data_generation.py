@@ -15,13 +15,13 @@ def generate_wearable_data(days=3, freq_min=1, seed=42):
     # Circadian rhythm (HR baseline)
     # -------------------------
 
-    phase_shift = 6 * 60  # minutes
+    phase_shift = 6 * 60  
 
     circadian = 60 + 15 * np.sin(2 * np.pi * (t - phase_shift) / (24 * 60))
     circadian += 3 * np.sin(2 * np.pi * (t - phase_shift) / (12 * 60))
     circadian += np.random.randn(minutes) * 0.5
 
-   # -------------------------
+    # -------------------------
     # Sleep state simulation
     # -------------------------
 
@@ -64,7 +64,7 @@ def generate_wearable_data(days=3, freq_min=1, seed=42):
         sleep_state[block6_end : block7_end] = 1
 
     # -------------------------
-    # Activity signal (IMPROVED)
+    # Activity signal
     # -------------------------
 
     # baseline circadian movement profile
@@ -104,7 +104,7 @@ def generate_wearable_data(days=3, freq_min=1, seed=42):
         exercise_events.append((start, start + duration))
 
     # =========================================================
-    # HEART RATE (UPDATED: physiologically realistic dynamics)
+    # HEART RATE 
     # =========================================================
 
     hr = np.zeros(minutes)
@@ -148,7 +148,7 @@ def generate_wearable_data(days=3, freq_min=1, seed=42):
     hr = np.clip(hr, 20, 190)
 
     # -------------------------
-    # HRV (inverse coupling, slightly smoother)
+    # HRV 
     # -------------------------
     hrv = 85 - 0.55 * hr + np.random.randn(minutes) * 4
     hrv = np.clip(hrv, 15, 120)
