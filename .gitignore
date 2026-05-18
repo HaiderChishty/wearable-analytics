@@ -17,7 +17,7 @@ venv/
 # Data (IMPORTANT)
 # ----------------------
 data/raw/*
-data/processed/*
+notebooks/*
 
 # Keep folder structure but not files
 !data/raw/.gitkeep
