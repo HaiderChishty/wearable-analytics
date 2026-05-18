@@ -31,33 +31,37 @@ def generate_wearable_data(days=3, freq_min=1, seed=42):
 
         day_start = d * 1440
 
-        # Sleep from 11 PM -> 7 AM
+        # Sleep from ~11 PM -> ~7 AM
         # States:
         # 0 = Awake
         # 1 = Light
         # 2 = Deep
         # 3 = REM
 
-        # 11:00 PM - 12:00 AM
-        sleep_state[day_start + 23*60 : day_start + 24*60] = 1
+        sleep_start = day_start + 23 * 60
 
-        # 12:00 AM - 1:30 AM
-        sleep_state[day_start + 24*60 : day_start + 24*60 + 90] = 2
+        block1_end = sleep_start + 60 + np.random.randint(-15, 16)
+        block2_end = block1_end + 90 + np.random.randint(-15, 16)
+        block3_end = block2_end + 90 + np.random.randint(-15, 16)
+        block4_end = block3_end + 60 + np.random.randint(-15, 16)
+        block5_end = block4_end + 90 + np.random.randint(-15, 16)
+        block6_end = block5_end + 60 + np.random.randint(-15, 16)
+        block7_end = block6_end + 30 + np.random.randint(-15, 16)
+        
 
-        # 1:30 AM - 3:00 AM
-        sleep_state[day_start + 24*60 + 90 : day_start + 24*60 + 180] = 1
+        sleep_state[sleep_start : block1_end] = 1
 
-        # 3:00 AM - 4:00 AM
-        sleep_state[day_start + 24*60 + 180 : day_start + 24*60 + 240] = 3
+        sleep_state[block1_end : block2_end] = 2
 
-        # 4:00 AM - 5:30 AM
-        sleep_state[day_start + 24*60 + 240 : day_start + 24*60 + 330] = 1
+        sleep_state[block2_end : block3_end] = 1
 
-        # 5:30 AM - 6:30 AM
-        sleep_state[day_start + 24*60 + 330 : day_start + 24*60 + 390] = 3
+        sleep_state[block3_end : block4_end] = 3
 
-        # 6:30 AM - 7:00 AM
-        sleep_state[day_start + 24*60 + 390 : day_start + 24*60 + 420] = 1
+        sleep_state[block4_end : block5_end] = 1
+
+        sleep_state[block5_end : block6_end] = 3
+
+        sleep_state[block6_end : block7_end] = 1
 
     # -------------------------
     # Activity signal (IMPROVED)

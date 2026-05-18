@@ -232,8 +232,9 @@ def calculate_hr_zone_features(df):
             .size()
         )
 
-    return pd.DataFrame(features)
+    zone_df = pd.DataFrame(features).fillna(0)
 
+    return zone_df
 
 # =========================================================
 # Daily Heart Rate Summary
