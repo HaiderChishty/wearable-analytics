@@ -1,8 +1,15 @@
 # Wearable Analytics Engine
 
-A modular pipeline for generating, processing, and interpreting wearable physiological data — from raw synthetic signals → engineered features → daily health scores → interactive dashboard.
-
 The system simulates a realistic wearable analytics stack and demonstrates how continuous biosignals can be transformed into decision-ready metrics.
+
+---
+
+## Demo
+
+Add a GIF of the dashboard here:
+
+```markdown
+![Dashboard Demo](assets/dashboard_demo.gif)
 
 ---
 
@@ -93,10 +100,3 @@ Built with Streamlit, the dashboard provides:
 The UI is designed to reflect a modern wearable analytics product experience.
 
 ---
-
-## Demo
-
-Add a GIF of the dashboard here:
-
-```markdown
-![Dashboard Demo](assets/dashboard_demo.gif)
