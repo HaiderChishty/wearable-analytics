@@ -6,9 +6,6 @@ The system simulates a realistic wearable analytics stack and demonstrates how c
 
 ## Demo
 
-Add a GIF of the dashboard here:
-
-```markdown
 ![Dashboard Demo](assets/dashboard_demo.gif)
 
 ---
